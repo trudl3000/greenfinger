@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>GrowTracker PWA</title>
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="./manifest.json">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #1e293b;
+      --card-alt: #334155;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --accent: #10b981;
+      --accent-dark: #059669;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --info: #3b82f6;
+      --radius: 14px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.45;
+      padding-bottom: 85px;
+      min-height: 100vh;
+    }
+    header {
+      background: rgba(30, 41, 59, 0.95);
+      backdrop-filter: blur(8px);
+      padding: 14px 18px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      border-bottom: 1px solid #334155;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    header h1 { font-size: 1.15rem; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+    .lock-btn {
+      background: var(--card-alt);
+      color: var(--text);
+      border: none;
+      padding: 6px 12px;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+    main { padding: 16px; max-width: 680px; margin: 0 auto; }
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    .card h2 { font-size: 1.02rem; margin-bottom: 10px; color: var(--accent); display: flex; justify-content: space-between; align-items: center; }
+    .card h3 { font-size: 0.92rem; margin: 12px 0 6px; color: var(--text); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+    .metric {
+      background: rgba(15, 23, 42, 0.65);
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.04);
+    }
+    .metric .label { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+    .metric .val { font-size: 1.05rem; font-weight: 700; margin-top: 2px; }
+    .metric .sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+    .badge {
+      display: inline-block;
+      padding: 3px 9px;
+      border-radius: 99px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent);
+    }
+    .badge.warn { background: rgba(245, 158, 11, 0.2); color: var(--warn); }
+    .badge.danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
+    .badge.info { background: rgba(59, 130, 246, 0.2); color: var(--info); }
+    .alert-box {
+      padding: 11px 13px;
+      border-radius: 10px;
+      margin-bottom: 10px;
+      font-size: 0.85rem;
+      border-left: 4px solid var(--accent);
+      background: rgba(16, 185, 129, 0.1);
+    }
+    .alert-box.warn { border-left-color: var(--warn); background: rgba(245, 158, 11, 0.12); }
+    .alert-box.danger { border-left-color: var(--danger); background: rgba(239, 68, 68, 0.12); }
+    label { display: block; font-size: 0.8rem; color: var(--muted); margin-bottom: 4px; margin-top: 10px; }
+    input, select, textarea {
+      width: 100%;
+      padding: 10px 12px;
+      background: #0f172a;
+      border: 1px solid #334155;
+      border-radius: 9px;
+      color: var(--text);
+      font-size: 0.92rem;
+    }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); }
+    button.btn {
+      width: 100%;
+      padding: 11px 14px;
+      background: var(--accent);
+      color: #06281e;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.92rem;
+      cursor: pointer;
+      margin-top: 12px;
+    }
+    button.btn.secondary { background: var(--card-alt); color: var(--text); }
+    button.btn.danger { background: var(--danger); color: #fff; }
+    button.btn-sm {
+      padding: 5px 10px;
+      font-size: 0.76rem;
+      border-radius: 7px;
+      border: none;
+      cursor: pointer;
+      background: var(--card-alt);
+      color: var(--text);
+    }
+    nav.bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: rgba(30, 41, 59, 0.98);
+      border-top: 1px solid #334155;
+      display: flex;
+      justify-content: space-around;
+      padding: 8px 4px calc(8px + env(safe-area-inset-bottom));
+      z-index: 60;
+    }
+    nav.bottom-nav button {
+      background: none;
+      border: none;
+      color: var(--muted);
+      font-size: 0.72rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      cursor: pointer;
+      flex: 1;
+    }
+    nav.bottom-nav button.active { color: var(--accent); font-weight: 600; }
+    nav.bottom-nav button span.icon { font-size: 1.2rem; }
+    .tab-section { display: none; }
+    .tab-section.active { display: block; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 8px; }
+    th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid #334155; }
+    th { color: var(--muted); font-weight: 600; }
+    /* PIN Lockscreen */
+    #pin-overlay {
+      position: fixed; inset: 0;
+      background: var(--bg);
+      z-index: 999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 24px;
+    }
+    .pin-dots { display: flex; gap: 12px; margin: 20px 0; }
+    .pin-dot {
+      width: 15px; height: 15px;
+      border-radius: 50%;
+      border: 2px solid var(--accent);
+      background: transparent;
+      transition: background 0.15s;
+    }
+    .pin-dot.filled { background: var(--accent); }
+    .pin-pad {
+      display: grid;
+      grid-template-columns: repeat(3, 72px);
+      gap: 14px;
+      margin-top: 10px;
+    }
+    .pin-key {
+      height: 62px;
+      border-radius: 16px;
+      background: var(--card);
+      border: 1px solid #334155;
+      color: var(--text);
+      font-size: 1.35rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .pin-key:active { background: var(--accent); color: #000; }
+    .strain-chip {
+      display: flex; justify-content: space-between; align-items: center;
+      background: rgba(15, 23, 42, 0.65); padding: 9px 12px; border-radius: 9px; margin-bottom: 8px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- 6-DIGIT PIN OVERLAY -->
+<div id="pin-overlay">
+  <h2 id="pin-title" style="color:var(--accent); margin-bottom:6px;">🔒 GrowTracker PIN</h2>
+  <p id="pin-subtitle" style="color:var(--muted); font-size:0.85rem; text-align:center;">Bitte 6-stelligen PIN eingeben</p>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+    <div class="pin-dot"></div><div class="pin-dot"></div><div class="pin-dot"></div>
+  </div>
+  <p id="pin-error" style="color:var(--danger); font-size:0.82rem; min-height:20px;"></p>
+  <div class="pin-pad">
+    <button class="pin-key" onclick="pressPin('1')">1</button>
+    <button class="pin-key" onclick="pressPin('2')">2</button>
+    <button class="pin-key" onclick="pressPin('3')">3</button>
+    <button class="pin-key" onclick="pressPin('4')">4</button>
+    <button class="pin-key" onclick="pressPin('5')">5</button>
+    <button class="pin-key" onclick="pressPin('6')">6</button>
+    <button class="pin-key" onclick="pressPin('7')">7</button>
+    <button class="pin-key" onclick="pressPin('8')">8</button>
+    <button class="pin-key" onclick="pressPin('9')">9</button>
+    <button class="pin-key" style="font-size:0.85rem;" onclick="clearPin()">Reset</button>
+    <button class="pin-key" onclick="pressPin('0')">0</button>
+    <button class="pin-key" style="font-size:1rem;" onclick="delPin()">⌫</button>
+  </div>
+</div>
+
+<header>
+  <h1>🌱 GrowTracker <span id="header-phase-badge" class="badge">Lädt...</span></h1>
+  <button class="lock-btn" onclick="lockApp()">🔒 Sperren</button>
+</header>
+
+<main>
+  <!-- TAB 1: DASHBOARD -->
+  <section id="tab-dashboard" class="tab-section active">
+    <div id="dash-alerts"></div>
+
+    <div class="card">
+      <h2>📅 Aktueller Grow-Status <span id="dash-grow-name" style="font-size:0.82rem; color:var(--muted);"></span></h2>
+      <div class="grid-3">
+        <div class="metric">
+          <div class="label">Gesamt-Tag</div>
+          <div class="val" id="stat-total-day">-</div>
+          <div class="sub" id="stat-veg-day">Vegi: -</div>
+        </div>
+        <div class="metric">
+          <div class="label">Blüte-Tag (12/12)</div>
+          <div class="val" id="stat-flower-day">-</div>
+          <div class="sub" id="stat-flower-week">Woche: -</div>
+        </div>
+        <div class="metric">
+          <div class="label">Ernte-Countdown</div>
+          <div class="val" id="stat-harvest-cd">-</div>
+          <div class="sub" id="stat-harvest-win">Fenster</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💡 150W LED & Klima-Vorgabe (Heute)</h2>
+      <div class="grid-2">
+        <div class="metric">
+          <div class="label">Lampenleistung</div>
+          <div class="val" id="rec-light-pct">-</div>
+          <div class="sub" id="rec-light-watt">-</div>
+        </div>
+        <div class="metric">
+          <div class="label">Lampenabstand</div>
+          <div class="val" id="rec-light-dist">-</div>
+          <div class="sub" id="rec-light-cycle">Zyklus: -</div>
+        </div>
+        <div class="metric">
+          <div class="label">Ziel-Temperatur</div>
+          <div class="val" id="rec-temp-day">-</div>
+          <div class="sub" id="rec-temp-night">Nacht: -</div>
+        </div>
+        <div class="metric">
+          <div class="label">Luftfeuchtigkeit (RLF)</div>
+          <div class="val" id="rec-rh">-</div>
+          <div class="sub" id="rec-air-note">Abluft aktiv</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🧪 BioBizz Düngeschema (11L Stofftopf)</h2>
+      <p id="biobizz-status-text" style="font-size:0.84rem; color:var(--muted); margin-bottom:10px;"></p>
+      <div class="grid-3">
+        <div class="metric">
+          <div class="label">Bio-Grow</div>
+          <div class="val" id="bb-grow">0 ml/L</div>
+          <div class="sub" id="bb-grow-total">Pro Topf: -</div>
+        </div>
+        <div class="metric">
+          <div class="label">Bio-Bloom</div>
+          <div class="val" id="bb-bloom">0 ml/L</div>
+          <div class="sub" id="bb-bloom-total">Pro Topf: -</div>
+        </div>
+        <div class="metric">
+          <div class="label">Top-Max</div>
+          <div class="val" id="bb-topmax">0 ml/L</div>
+          <div class="sub" id="bb-topmax-total">Pro Topf: -</div>
+        </div>
+      </div>
+      <div style="margin-top:10px; font-size:0.78rem; color:var(--muted);" id="bb-water-hint">
+        💧 Gießrichtwert 11L Stofftopf: ca. 3,0 – 3,5 Liter Nährlösung pro Topf (langsam in Etappen gießen).
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🌿 Sorten im Zelt & Höhen-Check (max. 160 cm)</h2>
+      <div id="dash-strains-list"></div>
+    </div>
+  </section>
+
+  <!-- TAB 2: GROW & MEILENSTEINE -->
+  <section id="tab-grow" class="tab-section">
+    <div class="card">
+      <h2>⚙️ Aktiven Grow & Meilensteine pflegen</h2>
+      <label>Name des Durchgangs</label>
+      <input type="text" id="inp-grow-name" placeholder="z.B. Winter-Grow 2026">
+
+      <label>Verwendete Erde im 11L Stofftopf</label>
+      <select id="inp-substrate">
+        <option value="All-Mix">BioBizz All-Mix (stark vorgedüngt)</option>
+        <option value="Light-Mix">BioBizz Light-Mix (schwach vorgedüngt)</option>
+      </select>
+
+      <div class="grid-2">
+        <div>
+          <label>1. Keimdatum (Samen)</label>
+          <input type="date" id="inp-date-germ">
+        </div>
+        <div>
+          <label>2. Start Vegi (Hauptlampe)</label>
+          <input type="date" id="inp-date-veg">
+        </div>
+        <div>
+          <label>3. Umzug in 11L Stofftopf</label>
+          <input type="date" id="inp-date-repot">
+        </div>
+        <div>
+          <label>4. Blüte-Switch (12/12)</label>
+          <input type="date" id="inp-date-flower">
+        </div>
+        <div>
+          <label>5. Erntedatum (Start Trocknung)</label>
+          <input type="date" id="inp-date-harvest">
+        </div>
+        <div>
+          <label>6. Einglasen (Start Curing)</label>
+          <input type="date" id="inp-date-curing">
+        </div>
+      </div>
+
+      <label>Aktuelle höchste Pflanzenhöhe ab Erde (cm)</label>
+      <input type="number" id="inp-current-height" placeholder="z.B. 12">
+
+      <label>Beteiligte Sorten im Zelt (Mehrfachauswahl mit Antippen)</label>
+      <div id="grow-strain-selector" style="margin-top:6px;"></div>
+
+      <button class="btn" onclick="saveGrowSettings()">💾 Grow-Daten speichern & berechnen</button>
+    </div>
+
+    <div class="card">
+      <h2>📝 Neues Logbuch-Ereignis (Messung / Gießen)</h2>
+      <div class="grid-3">
+        <div>
+          <label>Höhe (cm)</label>
+          <input type="number" id="log-height" placeholder="12">
+        </div>
+        <div>
+          <label>Temp (°C)</label>
+          <input type="number" step="0.1" id="log-temp" placeholder="24.5">
+        </div>
+        <div>
+          <label>RLF (%)</label>
+          <input type="number" id="log-rh" placeholder="58">
+        </div>
+      </div>
+      <label>Notiz (z.B. Gegossen, Umgetopft, Knicktest)</label>
+      <input type="text" id="log-note" placeholder="z.B. 3L gegossen mit Wurzelstimulator">
+      <button class="btn secondary" onclick="addLogEntry()">➕ Eintrag zum Logbuch hinzufügen</button>
+
+      <h3>Letzte Einträge</h3>
+      <div id="log-history-list"></div>
+    </div>
+  </section>
+
+  <!-- TAB 3: SORTEN-DATENBANK -->
+  <section id="tab-strains" class="tab-section">
+    <div class="card">
+      <h2>🧬 Sorten-Stammdaten</h2>
+      <p style="font-size:0.8rem; color:var(--muted); margin-bottom:10px;">
+        Deine 5 Wunschsorten sind bereits fertig hinterlegt. Du kannst jederzeit eigene Sorten ergänzen.
+      </p>
+      <div id="strain-db-list"></div>
+    </div>
+
+    <div class="card">
+      <h2>➕ Neue Sorte anlegen / bearbeiten</h2>
+      <input type="hidden" id="strain-edit-id">
+      <label>Sortenname</label>
+      <input type="text" id="strain-name" placeholder="z.B. OG Kush">
+      <div class="grid-2">
+        <div>
+          <label>Genetik</label>
+          <select id="strain-genetics">
+            <option value="Indica-dominant">Indica-dominant</option>
+            <option value="Hybrid (50/50)">Hybrid (50/50)</option>
+            <option value="Sativa-dominant">Sativa-dominant</option>
+            <option value="CBD-Hybrid (1:1)">CBD-Hybrid (1:1)</option>
+          </select>
+        </div>
+        <div>
+          <label>Stretch-Faktor (z.B. 1.8)</label>
+          <input type="number" step="0.1" id="strain-stretch" placeholder="1.8">
+        </div>
+        <div>
+          <label>Blütedauer Min (Tage)</label>
+          <input type="number" id="strain-fmin" placeholder="56">
+        </div>
+        <div>
+          <label>Blütedauer Max (Tage)</label>
+          <input type="number" id="strain-fmax" placeholder="63">
+        </div>
+      </div>
+      <button class="btn" onclick="saveStrain()">💾 Sorte speichern</button>
+    </div>
+  </section>
+
+  <!-- TAB 4: BACKUP & SETUP -->
+  <section id="tab-settings" class="tab-section">
+    <div class="card">
+      <h2>📦 JSON-Backup (Export & Import)</h2>
+      <p style="font-size:0.82rem; color:var(--muted); margin-bottom:10px;">
+        Alle Daten liegen nur lokal auf diesem Smartphone. Sichere dir regelmäßig eine JSON-Datei.
+      </p>
+      <button class="btn" onclick="exportBackup()">⬇️ Backup als JSON herunterladen</button>
+      <label style="margin-top:16px;">Backup-Datei (.json) wiederherstellen</label>
+      <input type="file" id="import-file" accept=".json" onchange="importBackup(event)">
+    </div>
+
+    <div class="card">
+      <h2>⛺ Mein Zelt-Setup (Stammdaten)</h2>
+      <div class="grid-2">
+        <div>
+          <label>Zelt-Fläche (cm)</label>
+          <input type="text" id="cfg-tent-area" value="80x80" readonly>
+        </div>
+        <div>
+          <label>Zelthöhe (cm)</label>
+          <input type="number" id="cfg-tent-height" value="160">
+        </div>
+        <div>
+          <label>Max. LED Leistung (W)</label>
+          <input type="number" id="cfg-light-watt" value="150">
+        </div>
+        <div>
+          <label>Endtopf-Volumen (L)</label>
+          <input type="number" id="cfg-pot-liters" value="11">
+        </div>
+      </div>
+      <button class="btn secondary" onclick="saveHardwareSetup()">Setup aktualisieren</button>
+    </div>
+
+    <div class="card">
+      <h2>🔐 6-stelligen PIN ändern</h2>
+      <label>Neuer 6-stelliger PIN (nur Ziffern)</label>
+      <input type="password" inputmode="numeric" maxlength="6" id="inp-new-pin" placeholder="6 Ziffern">
+      <button class="btn secondary" onclick="changePin()">PIN aktualisieren</button>
+    </div>
+  </section>
+</main>
+
+<nav class="bottom-nav">
+  <button class="active" onclick="switchTab('dashboard', this)">
+    <span class="icon">📊</span><span>Cockpit</span>
+  </button>
+  <button onclick="switchTab('grow', this)">
+    <span class="icon">🌱</span><span>Grow & Log</span>
+  </button>
+  <button onclick="switchTab('strains', this)">
+    <span class="icon">🧬</span><span>Sorten</span>
+  </button>
+  <button onclick="switchTab('settings', this)">
+    <span class="icon">⚙️</span><span>Backup/PIN</span>
+  </button>
+</nav>
+
+<script>
+const STORAGE_KEY = 'grow_tracker_pwa_data_v1';
+const PIN_KEY = 'grow_tracker_pwa_pin_v1';
+
+const DEFAULT_STRAINS = [
+  { id: 'og-kush', name: 'OG Kush', genetics: 'Indica-dominant', fmin: 56, fmax: 63, stretch: 1.8 },
+  { id: 'gelato', name: 'Gelato', genetics: 'Indica-dominant', fmin: 56, fmax: 63, stretch: 1.7 },
+  { id: 'frozen-biscotti', name: 'Frozen Biscotti', genetics: 'Indica-dominant', fmin: 56, fmax: 65, stretch: 1.6 },
+  { id: 'painkiller-xl', name: 'Painkiller XL (CBD)', genetics: 'CBD-Hybrid (1:1)', fmin: 60, fmax: 67, stretch: 2.1 },
+  { id: 'liberty-haze', name: 'Liberty Haze', genetics: 'Sativa-dominant', fmin: 63, fmax: 72, stretch: 2.5 }
+];
+
+// BioBizz Schema (ml pro Liter) für Light-Mix & All-Mix nach Blütewochen (BW 1 bis BW 10)
+const BIOBIZZ_TABLE = {
+  'Light-Mix': {
+    veg:   { grow: 2, bloom: 0, topmax: 0 },
+    weeks: [
+      { grow: 2, bloom: 1, topmax: 1 }, // BW 1
+      { grow: 2, bloom: 2, topmax: 1 }, // BW 2
+      { grow: 2, bloom: 2, topmax: 1 }, // BW 3
+      { grow: 3, bloom: 3, topmax: 1 }, // BW 4
+      { grow: 3, bloom: 3, topmax: 1 }, // BW 5
+      { grow: 4, bloom: 4, topmax: 4 }, // BW 6
+      { grow: 4, bloom: 4, topmax: 4 }, // BW 7
+      { grow: 4, bloom: 4, topmax: 4 }, // BW 8
+      { grow: 0, bloom: 0, topmax: 0 }  // Spülen
+    ]
+  },
+  'All-Mix': {
+    veg:   { grow: 1, bloom: 0, topmax: 0 },
+    weeks: [
+      { grow: 1, bloom: 1, topmax: 1 }, // BW 1
+      { grow: 1, bloom: 2, topmax: 1 }, // BW 2
+      { grow: 1, bloom: 2, topmax: 1 }, // BW 3
+      { grow: 1, bloom: 3, topmax: 1 }, // BW 4
+      { grow: 1, bloom: 3, topmax: 1 }, // BW 5
+      { grow: 1, bloom: 4, topmax: 4 }, // BW 6
+      { grow: 1, bloom: 4, topmax: 4 }, // BW 7
+      { grow: 1, bloom: 4, topmax: 4 }, // BW 8
+      { grow: 0, bloom: 0, topmax: 0 }  // Spülen
+    ]
+  }
+};
+
+let appData = null;
+let currentPinInput = '';
+
+function initData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { appData = JSON.parse(raw); } catch(e) { appData = null; }
+  }
+  if (!appData) {
+    const fiveWeeksAgo = new Date();
+    fiveWeeksAgo.setDate(fiveWeeksAgo.getDate() - 35);
+    const isoStart = fiveWeeksAgo.toISOString().split('T')[0];
+
+    appData = {
+      hardware: { tentArea: '80x80', tentHeight: 160, lightWatt: 150, potLiters: 11 },
+      strains: DEFAULT_STRAINS,
+      activeGrow: {
+        name: 'Aktueller Durchgang',
+        substrate: 'All-Mix',
+        dateGerm: isoStart,
+        dateVeg: isoStart,
+        dateRepot: '',
+        dateFlower: '',
+        dateHarvest: '',
+        dateCuring: '',
+        currentHeight: 12,
+        selectedStrains: ['og-kush', 'gelato', 'frozen-biscotti'],
+        logs: []
+      }
+    };
+    saveData();
+  }
+}
+
+function saveData() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(appData));
+}
+
+/* --- PIN LOCK LOGIC --- */
+function initPinScreen() {
+  const savedPin = localStorage.getItem(PIN_KEY);
+  const title = document.getElementById('pin-title');
+  const sub = document.getElementById('pin-subtitle');
+  if (!savedPin) {
+    title.textContent = '🔐 Neuen 6-stelligen PIN festlegen';
+    sub.textContent = 'Wähle deinen persönlichen 6-stelligen PIN zum Schutz der App';
+  } else {
+    title.textContent = '🔒 GrowTracker entsperren';
+    sub.textContent = 'Bitte 6-stelligen PIN eingeben';
+  }
+  currentPinInput = '';
+  updatePinDots();
+}
+
+function pressPin(digit) {
+  if (currentPinInput.length >= 6) return;
+  currentPinInput += digit;
+  document.getElementById('pin-error').textContent = '';
+  updatePinDots();
+  if (currentPinInput.length === 6) {
+    setTimeout(verifyPin, 120);
+  }
+}
+
+function delPin() {
+  currentPinInput = currentPinInput.slice(0, -1);
+  updatePinDots();
+}
+
+function clearPin() {
+  currentPinInput = '';
+  updatePinDots();
+}
+
+function updatePinDots() {
+  const dots = document.querySelectorAll('#pin-dots .pin-dot');
+  dots.forEach((d, idx) => {
+    d.classList.toggle('filled', idx < currentPinInput.length);
+  });
+}
+
+function verifyPin() {
+  const savedPin = localStorage.getItem(PIN_KEY);
+  if (!savedPin) {
+    localStorage.setItem(PIN_KEY, btoa(currentPinInput));
+    document.getElementById('pin-overlay').style.display = 'none';
+    renderAll();
+  } else if (btoa(currentPinInput) === savedPin) {
+    document.getElementById('pin-overlay').style.display = 'none';
+    renderAll();
+  } else {
+    document.getElementById('pin-error').textContent = 'Falscher PIN-Code!';
+    currentPinInput = '';
+    updatePinDots();
+  }
+}
+
+function lockApp() {
+  initPinScreen();
+  document.getElementById('pin-overlay').style.display = 'flex';
+}
+
+function changePin() {
+  const val = document.getElementById('inp-new-pin').value.trim();
+  if (!/^\d{6}$/.test(val)) {
+    alert('Bitte exakt 6 Ziffern (0-9) eingeben!');
+    return;
+  }
+  localStorage.setItem(PIN_KEY, btoa(val));
+  document.getElementById('inp-new-pin').value = '';
+  alert('6-stelliger PIN erfolgreich geändert!');
+}
+
+/* --- DATE HELPER --- */
+function daysBetween(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr + 'T00:00:00');
+  const now = new Date();
+  now.setHours(0,0,0,0);
+  return Math.floor((now - d) / (1000 * 60 * 60 * 24)) + 1;
+}
+
+/* --- RENDER ENGINE --- */
+function renderAll() {
+  renderDashboard();
+  renderGrowForm();
+  renderStrainDB();
+  renderHardwareForm();
+}
+
+function renderDashboard() {
+  const g = appData.activeGrow;
+  const hw = appData.hardware;
+  document.getElementById('dash-grow-name').textContent = g.name || '';
+
+  const totalDay = daysBetween(g.dateGerm);
+  const vegDay = daysBetween(g.dateVeg);
+  const repotDay = daysBetween(g.dateRepot);
+  const flowerDay = daysBetween(g.dateFlower);
+  const harvestDay = daysBetween(g.dateHarvest);
+  const curingDay = daysBetween(g.dateCuring);
+
+  const chosenStrains = appData.strains.filter(s => g.selectedStrains.includes(s.id));
+  const maxFMin = chosenStrains.length ? Math.max(...chosenStrains.map(s => s.fmin)) : 56;
+  const maxFMax = chosenStrains.length ? Math.max(...chosenStrains.map(s => s.fmax)) : 63;
+
+  // Phase determination
+  let phase = 'Frühe Vegi';
+  let lightPct = '40 – 50 %';
+  let lightWatt = Math.round(hw.lightWatt * 0.45) + ' W';
+  let lightDist = '40 – 45 cm';
+  let lightCycle = '18/6';
+  let tempDay = '22 – 26 °C';
+  let tempNight = '18 – 21 °C';
+  let rh = '60 – 70 %';
+  let airNote = 'Abluft Stufe 1 + sanfte Umluft';
+
+  const h = Number(g.currentHeight) || 12;
+
+  if (curingDay && curingDay > 0) {
+    phase = 'Curing (Glas-Reifung)';
+    lightPct = '0 % (Dunkel)';
+    lightWatt = '0 W';
+    lightDist = '-';
+    lightCycle = 'Dunkelheit';
+    tempDay = '18 – 20 °C';
+    tempNight = '18 – 20 °C';
+    rh = '58 – 62 % im Glas';
+    airNote = curingDay <= 14 ? 'Täglich 10-15 Min. Gläser lüften!' : '1-2x pro Woche lüften';
+  } else if (harvestDay && harvestDay > 0) {
+    phase = 'Trocknung im Zelt';
+    lightPct = '0 % (Dunkel)';
+    lightWatt = '0 W';
+    lightDist = '-';
+    lightCycle = 'Dunkelheit';
+    tempDay = '18 – 20 °C';
+    tempNight = '18 – 20 °C';
+    rh = '55 – 60 %';
+    airNote = 'Abluft + indirekte Umluft (nicht auf Blüten!)';
+  } else if (flowerDay && flowerDay > 0) {
+    const fWeek = Math.ceil(flowerDay / 7);
+    lightCycle = '12/12';
+    if (fWeek <= 3) {
+      phase = `Blüte Stretch (BW ${fWeek})`;
+      lightPct = '80 – 90 %';
+      lightWatt = `${Math.round(hw.lightWatt*0.85)} W`;
+      lightDist = '35 cm';
+      tempDay = '24 – 27 °C';
+      tempNight = '19 – 21 °C';
+      rh = '50 – 55 %';
+      airNote = 'Abluft + Umluft über & unter Blätterdach';
+    } else {
+      phase = `Hauptblüte (BW ${fWeek})`;
+      lightPct = '100 %';
+      lightWatt = `${hw.lightWatt} W`;
+      lightDist = '30 – 35 cm';
+      tempDay = '22 – 26 °C';
+      tempNight = '18 – 20 °C';
+      rh = fWeek >= 7 ? '40 – 45 % (Schimmelschutz!)' : '45 – 50 %';
+      airNote = 'Starke Umluft gegen Schimmel (Botrytis)';
+    }
+  } else {
+    // Vegetative / Seedling
+    if ((totalDay && totalDay <= 14) && h < 10) {
+      phase = 'Keimling / Sämling';
+      lightPct = '25 %';
+      lightWatt = `${Math.round(hw.lightWatt*0.25)} W`;
+      lightDist = '45 – 50 cm';
+      tempDay = '23 – 26 °C';
+      tempNight = '20 – 22 °C';
+      rh = '65 – 75 %';
+    } else if (h < 20) {
+      phase = 'Frühe Vegi (Wachstum)';
+      lightPct = '40 – 50 %';
+      lightWatt = `${Math.round(hw.lightWatt*0.4)} – ${Math.round(hw.lightWatt*0.5)} W`;
+      lightDist = '40 – 45 cm';
+      tempDay = '23 – 27 °C';
+      tempNight = '19 – 22 °C';
+      rh = '60 – 70 %';
+    } else {
+      phase = 'Späte Vegi (Vor Blüte)';
+      lightPct = '60 – 75 %';
+      lightWatt = `${Math.round(hw.lightWatt*0.65)} W`;
+      lightDist = '35 – 40 cm';
+      tempDay = '24 – 28 °C';
+      tempNight = '19 – 22 °C';
+      rh = '55 – 65 %';
+    }
+  }
+
+  document.getElementById('header-phase-badge').textContent = phase;
+  document.getElementById('stat-total-day').textContent = totalDay ? `Tag ${totalDay}` : '-';
+  document.getElementById('stat-veg-day').textContent = vegDay ? `Vegi-Tag ${vegDay}` : 'Vegi: -';
+
+  if (flowerDay && flowerDay > 0) {
+    const fw = Math.ceil(flowerDay / 7);
+    document.getElementById('stat-flower-day').textContent = `BT ${flowerDay}`;
+    document.getElementById('stat-flower-week').textContent = `Blütewoche ${fw}`;
+    const remMin = Math.max(0, maxFMin - flowerDay);
+    const remMax = Math.max(0, maxFMax - flowerDay);
+    document.getElementById('stat-harvest-cd').textContent = `${remMin}–${remMax} T`;
+    document.getElementById('stat-harvest-win').textContent = `Ziel: BT ${maxFMin}-${maxFMax}`;
+  } else if (harvestDay && harvestDay > 0) {
+    document.getElementById('stat-flower-day').textContent = `Trocknung`;
+    document.getElementById('stat-flower-week').textContent = `Tag ${harvestDay}`;
+    document.getElementById('stat-harvest-cd').textContent = harvestDay >= 14 ? 'Glastest!' : `Tag ${harvestDay}/14`;
+    document.getElementById('stat-harvest-win').textContent = 'Bei 55-60% RLF';
+  } else {
+    document.getElementById('stat-flower-day').textContent = 'Noch 18/6';
+    document.getElementById('stat-flower-week').textContent = 'Kein 12/12 Switch';
+    document.getElementById('stat-harvest-cd').textContent = `~${maxFMin} T`;
+    document.getElementById('stat-harvest-win').textContent = 'ab 12/12 Switch';
+  }
+
+  document.getElementById('rec-light-pct').textContent = lightPct;
+  document.getElementById('rec-light-watt').textContent = lightWatt;
+  document.getElementById('rec-light-dist').textContent = lightDist;
+  document.getElementById('rec-light-cycle').textContent = `Zyklus: ${lightCycle}`;
+  document.getElementById('rec-temp-day').textContent = tempDay;
+  document.getElementById('rec-temp-night').textContent = `Nacht: ${tempNight}`;
+  document.getElementById('rec-rh').textContent = rh;
+  document.getElementById('rec-air-note').textContent = airNote;
+
+  // BioBizz Calculation
+  let bbDose = { grow: 0, bloom: 0, topmax: 0 };
+  let bbText = '';
+  const bufferDays = g.substrate === 'All-Mix' ? 21 : 10;
+
+  if (harvestDay && harvestDay > 0) {
+    bbText = 'Ernte/Trocknung aktiv – kein Dünger.';
+  } else if (!g.dateRepot) {
+    bbText = 'Noch im Anzucht-/12cm-Topf: Nur klares Wasser (optional Wurzelstimulator). Erst 7–10 Tage nach Durchwurzelung in 11L Stofftopf umtopfen.';
+  } else if (repotDay <= bufferDays && (!flowerDay || flowerDay <= 0)) {
+    const waitLeft = bufferDays - repotDay + 1;
+    bbText = `Frischer 11L Stofftopf (${g.substrate}): Noch für ${waitLeft} Tage vorgedüngt! Aktuell nur klares Wasser gießen.`;
+  } else if (flowerDay && flowerDay > 0) {
+    const daysToMinHarvest = maxFMin - flowerDay;
+    const fw = Math.min(8, Math.ceil(flowerDay / 7));
+    if (daysToMinHarvest <= 10) {
+      bbDose = { grow: 0, bloom: 0, topmax: 0 };
+      bbText = '🚰 SPÜLPHASE (letzte 10 Tage vor Ernte): Dünger komplett absetzen! Nur noch klares Wasser geben.';
+    } else {
+      bbDose = BIOBIZZ_TABLE[g.substrate].weeks[fw - 1];
+      bbText = `BioBizz Schema für ${g.substrate} in Blütewoche ${fw} (bei jedem Gießen zugeben):`;
+    }
+  } else {
+    bbDose = BIOBIZZ_TABLE[g.substrate].veg;
+    bbText = `BioBizz Schema für ${g.substrate} in der Wachstumsphase (18/6):`;
+  }
+
+  const waterPerPot = 3.3; // 3.3L Richtwert für 11L Stofftopf
+  document.getElementById('biobizz-status-text').textContent = bbText;
+  document.getElementById('bb-grow').textContent = `${bbDose.grow} ml/L`;
+  document.getElementById('bb-grow-total').textContent = `3,3L Guss: ${(bbDose.grow * waterPerPot).toFixed(1)} ml`;
+  document.getElementById('bb-bloom').textContent = `${bbDose.bloom} ml/L`;
+  document.getElementById('bb-bloom-total').textContent = `3,3L Guss: ${(bbDose.bloom * waterPerPot).toFixed(1)} ml`;
+  document.getElementById('bb-topmax').textContent = `${bbDose.topmax} ml/L`;
+  document.getElementById('bb-topmax-total').textContent = `3,3L Guss: ${(bbDose.topmax * waterPerPot).toFixed(1)} ml`;
+
+  // Strains & Height Warnings (160cm Tent -> max net plant height ~95cm)
+  const maxPlantHeight = hw.tentHeight - 65; // 25cm Topf + 30cm Abstand + 10cm Aufhängung
+  const strainsContainer = document.getElementById('dash-strains-list');
+  const alertsContainer = document.getElementById('dash-alerts');
+  strainsContainer.innerHTML = '';
+  alertsContainer.innerHTML = '';
+
+  if (harvestDay && harvestDay >= 14 && (!curingDay || curingDay <= 0)) {
+    alertsContainer.innerHTML += `<div class="alert-box warn"><strong>🫙 Trocknung Tag ${harvestDay}:</strong> Auch wenn dicke Stängel bei 55% RLF noch nicht knacken: Mache jetzt den 24h-Schraubglas-Test mit einer Probeblüte + Hygrometer (Ziel: 60–65% im Glas).</div>`;
+  }
+
+  chosenStrains.forEach(s => {
+    const projectedHeight = Math.round(h * s.stretch);
+    const recommendedSwitchCm = Math.round(maxPlantHeight / s.stretch);
+    let badgeClass = 'badge';
+    let statusNote = `Switch auf 12/12 empfohlen bei ca. ${recommendedSwitchCm} cm`;
+
+    if (!flowerDay && h >= recommendedSwitchCm) {
+      badgeClass = 'badge danger';
+      statusNote = `⚠️ Jetzt auf 12/12 umstellen! Erwartete Endhöhe: ~${projectedHeight} cm`;
+      alertsContainer.innerHTML += `<div class="alert-box danger"><strong>Höhen-Warnung (${s.name}):</strong> Bei aktuell ${h} cm und Stretch-Faktor ${s.stretch}x erreicht die Pflanze ca. ${projectedHeight} cm (Limit im ${hw.tentHeight}cm Zelt liegt bei ~${maxPlantHeight} cm).</div>`;
+    } else if (flowerDay && flowerDay > 0) {
+      statusNote = `Blütedauer: ${s.fmin}–${s.fmax} Tage`;
+    }
+
+    strainsContainer.innerHTML += `
+      <div class="strain-chip">
+        <div>
+          <strong>${s.name}</strong> <span style="font-size:0.75rem; color:var(--muted);">(${s.genetics})</span>
+          <div style="font-size:0.76rem; color:var(--muted); margin-top:2px;">${statusNote}</div>
+        </div>
+        <span class="${badgeClass}">Stretch ${s.stretch}x</span>
+      </div>
+    `;
+  });
+}
+
+function renderGrowForm() {
+  const g = appData.activeGrow;
+  document.getElementById('inp-grow-name').value = g.name || '';
+  document.getElementById('inp-substrate').value = g.substrate || 'All-Mix';
+  document.getElementById('inp-date-germ').value = g.dateGerm || '';
+  document.getElementById('inp-date-veg').value = g.dateVeg || '';
+  document.getElementById('inp-date-repot').value = g.dateRepot || '';
+  document.getElementById('inp-date-flower').value = g.dateFlower || '';
+  document.getElementById('inp-date-harvest').value = g.dateHarvest || '';
+  document.getElementById('inp-date-curing').value = g.dateCuring || '';
+  document.getElementById('inp-current-height').value = g.currentHeight || '';
+
+  const selDiv = document.getElementById('grow-strain-selector');
+  selDiv.innerHTML = '';
+  appData.strains.forEach(s => {
+    const active = g.selectedStrains.includes(s.id);
+    selDiv.innerHTML += `
+      <button type="button" class="btn-sm" style="margin:0 6px 6px 0; background:${active ? 'var(--accent)' : 'var(--card-alt)'}; color:${active ? '#000' : 'var(--text)'}; font-weight:${active ? '700' : '400'};"
+        onclick="toggleStrainSelection('${s.id}')">
+        ${active ? '✓ ' : ''}${s.name}
+      </button>
+    `;
+  });
+
+  renderLogList();
+}
+
+function toggleStrainSelection(id) {
+  const arr = appData.activeGrow.selectedStrains;
+  const idx = arr.indexOf(id);
+  if (idx >= 0) arr.splice(idx, 1);
+  else arr.push(id);
+  saveData();
+  renderGrowForm();
+  renderDashboard();
+}
+
+function saveGrowSettings() {
+  const g = appData.activeGrow;
+  g.name = document.getElementById('inp-grow-name').value.trim();
+  g.substrate = document.getElementById('inp-substrate').value;
+  g.dateGerm = document.getElementById('inp-date-germ').value;
+  g.dateVeg = document.getElementById('inp-date-veg').value;
+  g.dateRepot = document.getElementById('inp-date-repot').value;
+  g.dateFlower = document.getElementById('inp-date-flower').value;
+  g.dateHarvest = document.getElementById('inp-date-harvest').value;
+  g.dateCuring = document.getElementById('inp-date-curing').value;
+  g.currentHeight = Number(document.getElementById('inp-current-height').value) || 0;
+  saveData();
+  renderAll();
+  alert('Grow-Einstellungen gespeichert!');
+}
+
+function addLogEntry() {
+  const h = document.getElementById('log-height').value;
+  const t = document.getElementById('log-temp').value;
+  const rh = document.getElementById('log-rh').value;
+  const note = document.getElementById('log-note').value.trim();
+
+  if (h) appData.activeGrow.currentHeight = Number(h);
+  const entry = {
+    date: new Date().toLocaleDateString('de-AT'),
+    height: h || '-',
+    temp: t || '-',
+    rh: rh || '-',
+    note: note || ''
+  };
+  appData.activeGrow.logs.unshift(entry);
+  saveData();
+  document.getElementById('log-note').value = '';
+  renderAll();
+}
+
+function renderLogList() {
+  const container = document.getElementById('log-history-list');
+  const logs = appData.activeGrow.logs || [];
+  if (!logs.length) {
+    container.innerHTML = '<p style="font-size:0.8rem; color:var(--muted);">Noch keine Log-Einträge vorhanden.</p>';
+    return;
+  }
+  container.innerHTML = logs.slice(0, 15).map((l, i) => `
+    <div class="strain-chip" style="font-size:0.8rem;">
+      <div>
+        <strong>${l.date}</strong> — Höhe: ${l.height}cm | ${l.temp}°C | ${l.rh}% RLF
+        <div style="color:var(--muted);">${l.note}</div>
+      </div>
+      <button class="btn-sm" onclick="deleteLog(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function deleteLog(idx) {
+  appData.activeGrow.logs.splice(idx, 1);
+  saveData();
+  renderLogList();
+}
+
+function renderStrainDB() {
+  const list = document.getElementById('strain-db-list');
+  list.innerHTML = appData.strains.map(s => `
+    <div class="strain-chip">
+      <div>
+        <strong>${s.name}</strong> <span class="badge">${s.fmin}–${s.fmax} Tage</span>
+        <div style="font-size:0.75rem; color:var(--muted);">${s.genetics} | Stretch: ${s.stretch}x</div>
+      </div>
+      <button class="btn-sm" onclick="deleteStrain('${s.id}')">🗑️</button>
+    </div>
+  `).join('');
+}
+
+function saveStrain() {
+  const name = document.getElementById('strain-name').value.trim();
+  if (!name) return alert('Bitte Sortennamen eingeben');
+  const genetics = document.getElementById('strain-genetics').value;
+  const stretch = parseFloat(document.getElementById('strain-stretch').value) || 1.8;
+  const fmin = parseInt(document.getElementById('strain-fmin').value) || 56;
+  const fmax = parseInt(document.getElementById('strain-fmax').value) || 63;
+
+  const id = name.toLowerCase().replace(/[^a-z0-9]/g, '-') + '-' + Date.now().toString().slice(-3);
+  appData.strains.push({ id, name, genetics, stretch, fmin, fmax });
+  saveData();
+  document.getElementById('strain-name').value = '';
+  renderAll();
+}
+
+function deleteStrain(id) {
+  appData.strains = appData.strains.filter(s => s.id !== id);
+  appData.activeGrow.selectedStrains = appData.activeGrow.selectedStrains.filter(sid => sid !== id);
+  saveData();
+  renderAll();
+}
+
+function renderHardwareForm() {
+  document.getElementById('cfg-tent-height').value = appData.hardware.tentHeight || 160;
+  document.getElementById('cfg-light-watt').value = appData.hardware.lightWatt || 150;
+  document.getElementById('cfg-pot-liters').value = appData.hardware.potLiters || 11;
+}
+
+function saveHardwareSetup() {
+  appData.hardware.tentHeight = Number(document.getElementById('cfg-tent-height').value) || 160;
+  appData.hardware.lightWatt = Number(document.getElementById('cfg-light-watt').value) || 150;
+  appData.hardware.potLiters = Number(document.getElementById('cfg-pot-liters').value) || 11;
+  saveData();
+  renderAll();
+  alert('Hardware-Setup aktualisiert!');
+}
+
+/* --- EXPORT / IMPORT --- */
+function exportBackup() {
+  const dataStr = JSON.stringify(appData, null, 2);
+  const blob = new Blob([dataStr], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const dateIso = new Date().toISOString().split('T')[0];
+  a.href = url;
+  a.download = `growtracker-backup-${dateIso}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importBackup(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (imported && imported.activeGrow && imported.strains) {
+        appData = imported;
+        saveData();
+        renderAll();
+        alert('Backup erfolgreich geladen!');
+      } else {
+        alert('Ungültiges Backup-Format.');
+      }
+    } catch (err) {
+      alert('Fehler beim Lesen der JSON-Datei.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function switchTab(tabId, btn) {
+  document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
+  document.getElementById('tab-' + tabId).classList.add('active');
+  document.querySelectorAll('nav.bottom-nav button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
+  });
+}
+
+initData();
+initPinScreen();
+</script>
+</body>
+</html>
